@@ -9,6 +9,7 @@ import io
 import base64
 import uvicorn
 from enum import Enum
+import time
 
 from starlette.middleware.cors import CORSMiddleware
 
@@ -43,14 +44,18 @@ def get_image_captioning(image: str) -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": """주어진 이미지를 기반으로 간결하고 명확한 디스크립션을 생성합니다. 
-                        디스크립션에는 다음 요소들을 포함해야 합니다:
+                        "text": """주어진 이미지 각각에 대해 간결하고 명확한 디스크립션을 생성하세요. 
 
-                        주요 객체: 사진에서 가장 눈에 띄는 물체, 인물 또는 요소.
-                        배경 정보: 배경에서 보이는 주요 환경, 장소, 또는 색상 조합.
-                        활동 또는 상황: 사진 속 인물이나 물체가 수행 중인 활동 또는 상태.
-                        분위기와 감정: 사진이 전달하는 전반적인 분위기(예: 평화로운, 역동적인, 따뜻한).
-                        디스크립션은 한 문단으로 작성하며, 생동감 있는 언어를 사용하여 사진의 이미지를 쉽게 떠올릴 수 있도록 작성해주세요.""",
+                                디스크립션 작성 기준:
+                                - 한 문장으로 주요 객체, 배경, 활동 또는 상황, 분위기를 포함하여 작성합니다.
+                                - 각 디스크립션은 최대 20단어로 제한합니다.
+                                - 생동감 있는 언어로 이미지를 쉽게 떠올릴 수 있게 작성하세요.
+                                - 각 디스크립션에서 추출한 5개의 키워드를 #으로 구분하여 도출하세요.
+
+                                예시 출력:
+                                1. 초록빛 숲속에 앉아 있는 노루가 평화롭게 쉬고 있다. #숲속 #노루 #평화로움 #자연 #초록빛
+
+                                """
                     },
                     {
                         "type": "image_url",
@@ -166,9 +171,17 @@ async def generate_novel(
     - **images**: 시간 순서대로 정렬된 이미지 파일들
     """
     print(f"{name}이 선택한 {genre.value} 장르")
+    total_start_time = time.time()
     captions = await image_to_caption(images)  # 이미지에서 캡션 생성
     print(f'')
+    total_end_caption_time = time.time()
+    print(f"전체 소요 시간: {total_end_caption_time - total_start_time:.2f}초")
+
     novel = caption_to_novel(captions, name, genre)  # 캡션을 기반으로 소설 생성
+
+    total_end_time = time.time()  # 전체 프로세스 종료 시간
+    print(f"전체 소요 시간: {total_end_time - total_end_caption_time:.2f}초")
+
     return NovelResponse(captions=captions, novel=novel)
 
 # FastAPI 애플리케이션 실행
